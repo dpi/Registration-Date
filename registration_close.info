@@ -1,0 +1,6 @@
+name = Auto Close Registrations
+description= Prevent users from registering for Registration-enabled entities after a date.
+core = 7.x
+dependencies = registration
+dependencies = date_api
+package = Registration

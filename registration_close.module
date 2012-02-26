@@ -1,0 +1,210 @@
+<?php
+
+/**
+ * Drupal variable name which holds settings for date field to close registrations.
+ */
+define('REGISTRATION_CLOSE_VAR_FIELD_DATE', 'registration_close_field_date');
+
+/**
+ * Implements hook_cron().
+ * 
+ * Automatically close entities whose closing date has passed.
+ * 
+ * TODO: This could be made more efficient, get entities where registration_entity:status = 1 and (date is set || date < now)
+ */
+function registration_close_cron() {
+  $query = db_select('registration_entity', 'r')
+    ->fields('r', array('entity_type', 'entity_id'))
+    ->condition('status', 1)
+    ->condition('entity_id', 0, '>')
+    ->execute();
+
+  $registration_entity = array();
+  foreach ($query as $row) {
+    $registration_entity[$row->entity_type][] = $row->entity_id;
+  }
+
+  foreach ($registration_entity as $entity_type => $entity_ids) {
+    $entities = entity_load($entity_type, $entity_ids);
+    foreach ($entities as $entity) {
+      registration_close_has_expired($entity_type, $entity, TRUE);
+    }
+  }
+}
+
+/**
+ * Automatically close registrations if required, on each entity viewed.
+ * 
+ * Implements hook_entity_view().
+ */
+function registration_close_entity_view($entity, $entity_type, $view_mode, $langcode) {
+  registration_close_has_expired($entity_type, $entity, TRUE);
+}
+
+/**
+ * Disable opening registrations on registration settings page, if date is in past.
+ * 
+ * Implements hook_form_FORM_ID_alter().
+ */
+function registration_close_form_registration_registrations_settings_form_alter(&$form, &$form_state, $form_id) {
+  $entity_type = $form_state['entity']['entity_type'];
+  $entity_id = $form_state['entity']['entity_id'];
+
+  $entities = entity_load($entity_type, array($entity_id));
+  if (isset($entities[$entity_id])) {
+    $entity = $entities[$entity_id];
+    if (registration_close_has_expired($entity_type, $entity, TRUE)) {
+      $form['status']['#disabled'] = TRUE;
+      drupal_set_message(t('Registrations cannot be enabled because it\'s date occurs in the past.'), 'warning');
+    }
+  }
+}
+
+/**
+ * Add field to associate closing date on field UI settings page.
+ * 
+ * Implements hook_form_FORM_ID_alter().
+ */
+function registration_close_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  $entity_type = $form['#instance']['entity_type'];
+  $bundle = $form['#instance']['bundle'];
+  $registration_field_name = $form['#instance']['field_name'];
+
+  $fields = field_info_fields();
+  $date_types = array('datetime', 'date', 'datestamp');
+  $date_field = variable_get(REGISTRATION_CLOSE_VAR_FIELD_DATE, array());
+
+  $date_field_options = array();
+
+  foreach ($fields as $field_name => $field) {
+    if (in_array($field['type'], $date_types) && isset($field['bundles'][$entity_type])) {
+      if (in_array($bundle, $field['bundles'][$entity_type])) {
+        $instance = field_info_instance($entity_type, $field_name, $bundle);
+        $date_field_options[$field_name] = t('@instance_label (@field_name)', array('@field_name' => $field_name, '@instance_label' => $instance['label']));
+      }
+    }
+  }
+
+  $form['registration_close'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Registration Close'),
+  );
+  $form['registration_close']['registration_close_date_field'] = array(
+    '#type' => 'select',
+    '#options' => $date_field_options,
+    '#title' => t('Close registrations on date:'),
+    '#description' => t('Automatically close registration for entities when the date for this field has passed.'),
+    '#empty_option' => t('-- Do Not Expire Automatically --'),
+    '#default_value' => _registration_close_variable_get_field_date($entity_type, $bundle, $registration_field_name),
+  );
+
+  $form['#submit'][] = 'registration_close_field_ui_submit';
+
+  // TODO: Close offset
+}
+
+function registration_close_field_ui_submit(&$form, &$form_state) {
+  $entity_type = $form['#instance']['entity_type'];
+  $bundle = $form['#instance']['bundle'];
+  $field_name = $form['#instance']['field_name'];
+
+  $date_field[$entity_type][$bundle][$field_name] = $form_state['values']['registration_close_date_field'];
+  _registration_close_variable_set_field_date($date_field);
+}
+
+/**
+ * Determine if Registrations should be closed for an entity.
+ * 
+ * @param $entity_type
+ * @param $entity
+ * @param $close If date has passed, but registrations have not been closed, 
+ *        then automatically close registrations for entity.
+ */
+function registration_close_has_expired($entity_type, $entity, $close = FALSE) {
+  list($entity_id, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  $field_name_registration = _registration_close_registration_field_name($entity_type, $bundle);
+
+  if ($field_name_registration) {
+    $field_name_date = _registration_close_variable_get_field_date($entity_type, $bundle, $field_name_registration);
+    $field_info_date = field_info_field($field_name_date);
+
+    if ($field_name_date && isset($entity->{$field_name_date}[LANGUAGE_NONE][0])) {
+      $close_date_value = $entity->{$field_name_date}[LANGUAGE_NONE][0];
+
+      $format = date_type_format($field_info_date['type']);
+      $close_date = new DateObject($close_date_value['value'], $close_date_value['timezone_db'], $format);
+
+      $expired = (date_format(date_now(), DATE_FORMAT_UNIX) - date_format($close_date, DATE_FORMAT_UNIX) >= 0) ? TRUE : FALSE;
+
+      if ($expired && $close) {
+        registration_close_status_set($entity_type, $entity, 0);
+      }
+
+      return $expired;
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Set Registation status for an entity.
+ * 
+ * @param $entity_type
+ * @param $entity
+ * @param $status: 1 for open, 0 for closed.
+ */
+function registration_close_status_set($entity_type, $entity, $status) {
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+
+  db_update('registration_entity')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->fields(array('status' => $status))
+    ->execute();
+}
+
+/**
+ * Get the field_name of registration field attached to entity.
+ * 
+ * @param unknown_type $entity_type
+ * @param unknown_type $entity
+ * 
+ * @return field_name. Or FALSE.
+ */
+function _registration_close_registration_field_name($entity_type, $bundle) {
+  $field_names = &drupal_static(__FUNCTION__);
+
+  if (isset($field_names[$entity_type][$bundle])) {
+    return $field_names[$entity_type][$bundle];
+  }
+
+  $fields = field_info_fields();
+
+  foreach ($fields as $field_name => $field) {
+    if ($field['type'] == 'registration' && isset($field['bundles'][$entity_type])) {
+      if (in_array($bundle, $field['bundles'][$entity_type])) {
+        return $field_names[$entity_type][$bundle] = $field_name;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Merge date fields variable for registration close.
+ * 
+ * @param array $variable in format [$entity_type][$bundle][$registration_field_name] = $date_field_name
+ */
+function _registration_close_variable_set_field_date($variable) {
+  $variable_db = variable_get(REGISTRATION_CLOSE_VAR_FIELD_DATE, array());
+  $variable = array_merge($variable_db, $variable);
+  variable_set(REGISTRATION_CLOSE_VAR_FIELD_DATE, $variable);
+}
+
+function _registration_close_variable_get_field_date($entity_type, $bundle, $registration_field_name) {
+  $date_field = variable_get(REGISTRATION_CLOSE_VAR_FIELD_DATE, array());
+  return isset($date_field[$entity_type][$bundle][$registration_field_name]) ? $date_field[$entity_type][$bundle][$registration_field_name] : NULL;
+}
