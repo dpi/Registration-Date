@@ -1,4 +1,4 @@
-Registration Close
+Registration Date
 dpi@d.o - http://danielph.in
 
 Closes Registrations on Entities 
@@ -38,5 +38,5 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 ## Development Notes
 
-Entities can have more than one Registration field attached; Registration_close
+Entities can have more than one Registration field attached; registration_date
 will automatically use the first Registration field found on the entity.
