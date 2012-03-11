@@ -72,8 +72,82 @@ function registration_date_registration_status_alter($entity_type, $entity_id, $
  * Implements hook_form_FORM_ID_alter().
  */
 function registration_date_form_registration_registrations_settings_form_alter(&$form, &$form_state, $form_id) {
+  if (!isset($form_state['build_info']['args'][1])) {
+    return;
+  }
+
   $entity_type = $form_state['entity']['entity_type'];
   $entity_id = $form_state['entity']['entity_id'];
+  $entity = $form_state['build_info']['args'][1];
+  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+
+  $registration_field_name = _registration_date_registration_field_name($entity_type, $bundle);
+
+  // Check if any fields are configured for this bundle.
+  if (!(count(_registration_date_variable_get_field_date($entity_type, $bundle, $registration_field_name, REGISTRATION_DATE_FIELD_OPEN)) + count(_registration_date_variable_get_field_date($entity_type, $bundle, $registration_field_name, REGISTRATION_DATE_FIELD_CLOSE)))) {
+    return;
+  }
+
+  $header = array(
+    'Label',
+    'Value',
+    'Action',
+    'Active',
+  );
+
+  $dates = registration_date_registration_dates($entity_type, $entity);
+  $dates_unix = array();
+  foreach ($dates as $date) {
+    $unix = date_format($date['date'], DATE_FORMAT_UNIX);
+
+    if (is_numeric($unix) && $unix > 0) {
+      $dates_unix[$unix] = $date['field_name'];
+    }
+  }
+
+  ksort($dates_unix);
+
+  // Find current applied date
+  $active_field_name = '';
+  foreach ($dates_unix as $unix_date => $field_name) {
+    if ($unix_date <= time()) {
+      $active_field_name = $field_name;
+    } else {
+      break;
+    }
+  }
+
+  $rows = array();
+  foreach ($dates_unix as $unix_date => $field_name) {
+    $row = array();
+    $instance = field_info_instance($entity_type, $field_name, $bundle);
+
+    $active = t('No');
+    if ($field_name == $active_field_name) {
+      $active = t('Yes');
+    }
+    else if ($unix_date > 0 && $unix_date <= time()) {
+      $active = t('Overridden');
+    }
+
+    $row[] = array('data' => $instance['label']);
+    $row[] = array('data' => format_date($unix_date));
+    $row[] = array('data' => t(ucfirst($dates[$field_name]['action'])));
+    $row[] = array('data' => $active);
+
+    $rows[] = $row;
+  }
+
+  $form['scheduling']['registration_date_explain'] = array(
+    '#type' => 'item',
+    '#title' => t('Date Fields'),
+    '#markup' => theme('table', array(
+      'header' => $header,
+      'rows' => $rows,
+      'caption' => t('How dates are applied to this Registration.'),
+      'empty' => t('No dates have been added to this registration.'),
+    )),
+  );
 }
 
 /**
@@ -282,8 +356,9 @@ function registration_date_registration_dates($entity_type, $entity) {
       $format = date_type_format($field_info['type']);
       if (isset($entity->{$field_name}[LANGUAGE_NONE][0])) {
         $field_value = $entity->{$field_name}[LANGUAGE_NONE][0];
-        $dates[] = array(
+        $dates[$field_name] = array(
           'date' => new DateObject($field_value['value'], $field_value['timezone_db'], $format),
+          'field_name' => $field_name,
           'action' => $action,
         );
       }
