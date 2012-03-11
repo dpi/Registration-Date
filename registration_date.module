@@ -38,6 +38,9 @@ function registration_date_cron() {
   }*/
 }
 
+/**
+ * Implements hook_date_theme().
+ */
 function registration_date_theme() {
   return array(
     'registration_date_field_ui' => array(
@@ -79,7 +82,7 @@ function registration_date_form_registration_registrations_settings_form_alter(&
   $entity_type = $form_state['entity']['entity_type'];
   $entity_id = $form_state['entity']['entity_id'];
   $entity = $form_state['build_info']['args'][1];
-  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
 
   $registration_field_name = _registration_date_registration_field_name($entity_type, $bundle);
 
@@ -112,7 +115,8 @@ function registration_date_form_registration_registrations_settings_form_alter(&
   foreach ($dates_unix as $unix_date => $field_name) {
     if ($unix_date <= time()) {
       $active_field_name = $field_name;
-    } else {
+    }
+    else {
       break;
     }
   }
@@ -126,7 +130,7 @@ function registration_date_form_registration_registrations_settings_form_alter(&
     if ($field_name == $active_field_name) {
       $active = t('Yes');
     }
-    else if ($unix_date > 0 && $unix_date <= time()) {
+    elseif ($unix_date > 0 && $unix_date <= time()) {
       $active = t('Overridden');
     }
 
@@ -300,7 +304,7 @@ function theme_registration_date_field_ui($variables) {
  * @param $save Save open or closed value to {registration_entity} settings.
  */
 function registration_date_registration_status($entity_type, $entity, $save = FALSE) {
-  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
 
   if (_registration_date_registration_field_name($entity_type, $bundle)) {
     $dates_unix = array(); // unix_time => open/close
@@ -340,7 +344,7 @@ function registration_date_registration_status($entity_type, $entity, $save = FA
  * @param $entity
  */
 function registration_date_registration_dates($entity_type, $entity) {
-  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
   $registration_field_name = _registration_date_registration_field_name($entity_type, $bundle);
 
   $dates = array();
@@ -373,7 +377,7 @@ function registration_date_registration_dates($entity_type, $entity) {
  * 
  * @param $entity_type
  * @param $entity
- * @param $status: 1 for open, 0 for closed.
+ * @param $status: 1: open, 0: closed
  */
 function registration_date_status_set($entity_type, $entity, $status) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
@@ -388,8 +392,8 @@ function registration_date_status_set($entity_type, $entity, $status) {
 /**
  * Get the field_name of registration field attached to entity.
  * 
- * @param unknown_type $entity_type
- * @param unknown_type $entity
+ * @param $entity_type
+ * @param $entity
  * 
  * @return field_name. Or FALSE.
  */
@@ -417,6 +421,7 @@ function _registration_date_registration_field_name($entity_type, $bundle) {
  * Merge date fields variable for registration close.
  * 
  * @param array $variable in format [$entity_type][$bundle][$registration_field_name][] = $date_field_name
+ * @param $when Set field date for open, or close.
  */
 function _registration_date_variable_set_field_date($variable, $when) {
   $variable_db = variable_get($when, array());
