@@ -1,9 +1,9 @@
 Registration Date
 dpi@d.o - http://danielph.in
 
-Closes Registrations on Entities 
-  Entity Registrations are closed automatically, determined by the value of a 
-date field attached to each entity.
+Opens or closes Registrations on Entities 
+  Entity Registrations are closed or opened automatically, determined by the 
+  value of a date field attached to each entity.
 
 Dependencies:
 
@@ -32,9 +32,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 * Attach a `date` field to an entity
 * Attach a `registration` field to an entity.
-* In field settings for registration field, go to 
-  Registration Close -> `Close registrations on date`, and set to
-  the field name of the date field attached.
+* In field settings for a Registration field, select which functionality you
+  would like to apply when a date fields value has been reached.
 
 ## Development Notes
 
