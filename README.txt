@@ -30,10 +30,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 ## Instructions
 
-* Attach a `date` field to an entity
-* Attach a `registration` field to an entity.
-* In field settings for a Registration field, select which functionality you
-  would like to apply when a date fields value has been reached.
+1. Attach a `date` field to an entity
+2. Attach a `registration` field to an entity.
+3. In field settings for a Registration field, select which functionality you
+   would like to apply when a date fields value has been reached.
+
+## Readme
+
+ * registration_date provides an option to disable date open and close 
+   functionality included with registration module.
 
 ## Development Notes
 

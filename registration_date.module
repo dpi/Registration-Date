@@ -11,6 +11,15 @@ define('REGISTRATION_DATE_FIELD_OPEN', 'registration_date_field_open');
 define('REGISTRATION_DATE_FIELD_CLOSE', 'registration_date_field_close');
 
 /**
+ * Drupal variable name which holds settings for whether to disable date
+ * functionality provided by Registration module.
+ * 
+ * Variable data stored as:
+ * [$entity_type][$bundle][$registration_field_name] = (boolean)
+ */
+define('REGISTRATION_DATE_REGISTRATION_DATES_DISABLE', 'registration_date_registration_dates_disable');
+
+/**
  * Implements hook_cron().
  * 
  * Automatically close entities whose closing date has passed.
@@ -85,6 +94,20 @@ function registration_date_form_registration_registrations_settings_form_alter(&
   list(, , $bundle) = entity_extract_ids($entity_type, $entity);
 
   $registration_field_name = _registration_date_registration_field_name($entity_type, $bundle);
+
+  // Disable Registration date fields if necessary
+  $registration_dates_enable = variable_get(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array());
+
+  if (!empty($registration_dates_enable[$entity_type][$bundle][$registration_field_name])) {
+    if (empty($form['scheduling']['open']['#default_value'])) {
+      $form['scheduling']['open']['#access'] = FALSE;
+    }
+    if (empty($form['scheduling']['close']['#default_value'])) {
+      $form['scheduling']['close']['#access'] = FALSE;
+    }
+  }
+  
+  // Show date diagnostic table
 
   // Check if any fields are configured for this bundle.
   if (!(count(_registration_date_variable_get_field_date($entity_type, $bundle, $registration_field_name, REGISTRATION_DATE_FIELD_OPEN)) + count(_registration_date_variable_get_field_date($entity_type, $bundle, $registration_field_name, REGISTRATION_DATE_FIELD_CLOSE)))) {
@@ -188,6 +211,15 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
     '#tree' => TRUE,
   );
 
+  $registration_dates_enable = variable_get(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array());
+
+  $form['registration_date']['registration_contrib_date'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable Registration dates'),
+    '#description' => t('Disable built-in date functionality provided by Registration module. Any existing open and close dates are preserved, and may be edited. No new values are permitted.'),
+    '#default_value' => (!empty($registration_dates_enable[$entity_type][$bundle][$registration_field_name])),
+  );
+
   $form['registration_date']['status']['#theme'] = 'registration_date_field_ui';
 
   $open  = _registration_date_variable_get_field_date($entity_type, $bundle, $registration_field_name, REGISTRATION_DATE_FIELD_OPEN);
@@ -231,6 +263,16 @@ function registration_date_field_ui_submit(&$form, &$form_state) {
   $bundle = $form['#instance']['bundle'];
   $registration_field_name = $form['#instance']['field_name'];
 
+  // Disable Registration dates
+  $registration_date_enable = array();
+  $registration_date_enable[$entity_type][$bundle][$registration_field_name] = (boolean)$form_state['values']['registration_date']['registration_contrib_date'];
+
+  variable_set(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array_merge(
+    variable_get(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array()),
+    $registration_date_enable)
+  );
+
+  // Open/Close field mapping
   $open[$entity_type][$bundle][$registration_field_name] = array();
   $close[$entity_type][$bundle][$registration_field_name] = array();
 
