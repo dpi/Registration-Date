@@ -74,20 +74,24 @@ function registration_date_theme() {
  * @param $variables
  *   Mixed registration settings to alter.
  */
-function registration_date_registration_status_alter($entity_type, $entity_id, array $variables) {
+function registration_date_registration_status_alter(&$status, $context) {
+  $entity_type = $context['entity_type'];
+  $entity_id   = $context['entity_id'];
+
   $entities = entity_load($entity_type, array($entity_id));
 
   if (isset($entities[$entity_id])) {
     $date_status = registration_date_registration_status($entity_type, $entities[$entity_id]);
-  
+
     if ($date_status !== NULL) {
-      $variables['status'] = $date_status;
+      $status = (boolean)$date_status;
     }
   }
 }
 
 /**
- * Disable opening registrations on registration settings page, if date is in past.
+ * Disable opening registrations on registration settings page, if date is in
+ * past.
  * 
  * Implements hook_form_FORM_ID_alter().
  */
