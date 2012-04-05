@@ -24,35 +24,6 @@ define('REGISTRATION_DATE_FIELD_CLOSE', 'registration_date_field_close');
 define('REGISTRATION_DATE_REGISTRATION_DATES_DISABLE', 'registration_date_registration_dates_disable');
 
 /**
- * Implements hook_cron().
- * 
- * Automatically close entities whose closing date has passed.
- * 
- * @todo: This could be made more efficient, get entities where 
- * registration_entity:status = 1 and (date is set || date < now)
- */
-function registration_date_cron() {
-  /* This code is invalid -- uses old API's.
-  $query = db_select('registration_entity', 'r')
-    ->fields('r', array('entity_type', 'entity_id'))
-    ->condition('status', 1)
-    ->condition('entity_id', 0, '>')
-    ->execute();
-
-  $registration_entity = array();
-  foreach ($query as $row) {
-    $registration_entity[$row->entity_type][] = $row->entity_id;
-  }
-
-  foreach ($registration_entity as $entity_type => $entity_ids) {
-    $entities = entity_load($entity_type, $entity_ids);
-    foreach ($entities as $entity) {
-      registration_date_has_expired($entity_type, $entity, TRUE);
-    }
-  }*/
-}
-
-/**
  * Implements hook_date_theme().
  */
 function registration_date_theme() {
