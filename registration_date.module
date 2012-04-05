@@ -282,15 +282,14 @@ function registration_date_field_ui_submit(&$form, &$form_state) {
   $registration_field_name = $form['#instance']['field_name'];
 
   // Disable Registration dates
-  $registration_date_enable = array();
+  $registration_date_enable = variable_get(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array());
   $registration_date_enable[$entity_type][$bundle][$registration_field_name] = (boolean)$form_state['values']['registration_date']['registration_contrib_date'];
-
-  variable_set(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array_merge(
-    variable_get(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, array()),
-    $registration_date_enable)
-  );
+  variable_set(REGISTRATION_DATE_REGISTRATION_DATES_DISABLE, $registration_date_enable);
 
   // Open/Close field mapping
+  $open = variable_get(REGISTRATION_DATE_FIELD_OPEN, array());
+  $close = variable_get(REGISTRATION_DATE_FIELD_CLOSE, array());
+
   $open[$entity_type][$bundle][$registration_field_name] = array();
   $close[$entity_type][$bundle][$registration_field_name] = array();
 
@@ -307,8 +306,8 @@ function registration_date_field_ui_submit(&$form, &$form_state) {
     }
   }
 
-  _registration_date_variable_set_field_date($open, REGISTRATION_DATE_FIELD_OPEN);
-  _registration_date_variable_set_field_date($close, REGISTRATION_DATE_FIELD_CLOSE);
+  variable_set(REGISTRATION_DATE_FIELD_OPEN, $open);
+  variable_set(REGISTRATION_DATE_FIELD_CLOSE, $close);
 }
 
 function theme_registration_date_field_ui($variables) {
@@ -486,21 +485,6 @@ function _registration_date_registration_field_name($entity_type, $bundle) {
   }
 
   return FALSE;
-}
-
-/**
- * Merge date fields variable for registration close.
- * 
- * @param array $variable
- *   In format:
- *   [$entity_type][$bundle][$registration_field_name][] = $date_field_name
- * @param $when
- *   Set field date for open, or close.
- */
-function _registration_date_variable_set_field_date($variable, $when) {
-  $variable_db = variable_get($when, array());
-  $variable = array_merge($variable_db, $variable);
-  variable_set($when, $variable);
 }
 
 /**
