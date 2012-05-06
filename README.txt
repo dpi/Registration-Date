@@ -1,14 +1,28 @@
 Registration Date
 dpi@d.o - http://danielph.in
 
-Opens or closes Registrations on Entities 
-  Entity Registrations are closed or opened automatically, determined by the 
-  value of a date field attached to each entity.
+Provides actions based on Date fields attached entities with registrations.
 
-Dependencies:
+## Dependencies:
 
 * Registration
 * Date API
+
+## Features
+
+Depending on the value of a date field attached to a host entity, the following
+actions may take place:
+
+  ### Open or Close New Registrations
+
+  Entity Registrations are closed or opened automatically, 
+
+  ### Send Reminder
+
+  A reminder will be sent on a date 
+
+An option to disable date open and close functionality included with 
+entity registration module.
 
 Copyright (C) 2012 Daniel Phin
 
@@ -34,11 +48,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 2. Attach a `registration` field to an entity.
 3. In field settings for a Registration field, select which functionality you
    would like to apply when a date fields value has been reached.
-
-## Readme
-
- * registration_date provides an option to disable date open and close 
-   functionality included with registration module.
 
 ## Development Notes
 
