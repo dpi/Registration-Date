@@ -114,10 +114,10 @@ function registration_date_form_registration_entity_settings_form_alter(&$form, 
   ksort($dates_unix);
 
   // Find current applied date
-  $active_field_name = '';
+  $active_field = NULL;
   foreach ($dates_unix as $unix_date => $field) {
     if ($unix_date <= time()) {
-      $active_field = $field;
+      $active_field = $field['i'];
     }
     else {
       break;
@@ -134,7 +134,7 @@ function registration_date_form_registration_entity_settings_form_alter(&$form, 
     $instance = field_info_instance($entity_type, $field_name, $bundle);
 
     $active = t('No');
-    if ($field['i'] == $active_field['i']) {
+    if ($field['i'] == $active_field) {
       $active = t('Yes');
     }
     elseif ($unix_date > 0 && $unix_date <= time()) {
