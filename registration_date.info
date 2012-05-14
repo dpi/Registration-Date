@@ -3,5 +3,4 @@ description = Control registration access to entities based on values of attache
 core = 7.x
 dependencies = registration
 dependencies = date_api
-dependencies = date_repeat_field
 package = Registration
