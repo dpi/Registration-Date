@@ -1,0 +1,75 @@
+<?php
+/**
+ * @file
+ * Date repeat field integration.
+ */
+
+function registration_date_repeat_field_widget_info() {
+  return array(
+    'registration_date_repeat_host_repeat' => array(
+      'label' => t('Date Repeat for Registrations'),
+      'description' => t('Provides a widget limiting registration field data to values found on a host entity with registrations.'),
+      'field types' => array('date', 'datestamp', 'datetime'),
+    )
+  );
+}
+
+function registration_date_repeat_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $host_entity_field_name = 'field_date_test_repeat'; // name of date repeat field on host entity
+  $host_field = field_info_field($host_entity_field_name);
+  $options = array();
+
+  if ($instance['entity_type'] == 'registration' && isset($form_state['registration'])) {
+    $registration = $form_state['registration'];
+
+    switch ($instance['widget']['type']) {
+      case 'registration_date_repeat_host_repeat':
+        $item = $registration->entity->{$host_entity_field_name}[LANGUAGE_NONE][0];
+
+        $dates = date_repeat_build_dates($item['rrule'], NULL, $host_field, $item);
+        $first = reset($dates);
+
+        foreach ($dates as $item) {
+          $timezone = isset($item['timezone']) ? $item['timezone'] : '';
+          $timezone = date_get_timezone($field['settings']['tz_handling'], $timezone);
+          $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
+          $db_format = date_type_format($host_field['type']);
+
+          $date = new DateObject($item['value'], $timezone_db, $db_format);
+          date_timezone_set($date, timezone_open($timezone));
+          $options[$item['value']] = date_format_date($date);
+        }
+
+        $element += array(
+          '#type' => 'select',
+          '#options' => $options,
+          '#default_value' => isset($items[$delta]['date_xxx']) ? $items[$delta]['date_xxx'] : '',
+          '#element_validate' => array('registration_date_repeat_host_repeat_validate'),
+        );
+
+        $tz = array(
+          '#type' => 'value',
+          '#value' => $first['timezone']
+        );
+
+        return array(
+          'value' => $element,
+          'timezone' => $tz,
+        );
+        break;
+    }
+  }
+  else {
+    form_set_error('date_xxx', t("'registration_date_repeat_host_repeat' widget should be attached to 'registration' entities only. %entity_type:%bundle are not acceptable.", array(
+      '%entity_type' => $instance['entity_type'],
+      '%bundle' => $instance['bundle'],
+    )));
+  }
+
+  return array('date_xxx' => $element);
+}
+
+function registration_date_repeat_host_repeat_validate($element, &$form_state) {
+  
+  
+}

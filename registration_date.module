@@ -4,6 +4,8 @@
  * Provides integration between Registration and Date modules.
  */
 
+module_load_include('inc', 'registration_date', '/registration_date.field');
+
 /**
  * Drupal variable name which holds settings for registration field instances.
  *
