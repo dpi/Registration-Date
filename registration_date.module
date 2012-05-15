@@ -10,6 +10,10 @@ module_load_include('inc', 'registration_date', '/registration_date.field');
  * Drupal variable name which holds settings for registration field instances.
  *
  * [instance_id][date_field_name][column] = array settings
+ *
+ * * instance_id: instance ID of registration field.
+ * * date_field_name: field name of date field attached to entity.
+ * * column: column of date field
  */
 define('REGISTRATION_DATE_FIELD', 'registration_date_field');
 
@@ -80,7 +84,7 @@ function registration_date_form_registration_entity_settings_form_alter(&$form, 
   }
   
   // Show date diagnostic table
-  if (!count(element_children($settings))) {
+  if (!is_array($settings) || !count(element_children($settings))) {
     return;
   }
 
@@ -169,12 +173,10 @@ function registration_date_form_registration_entity_settings_form_alter(&$form, 
 /**
  * Implements hook_form_FORM_ID_alter().
  * 
- * Add field to associate closing date on field UI settings page.
+ * Add field to associate actions on field UI settings page.
  * 
  * Builds grid containing each date field attached to this bundle, and whether
  * to use each field for opening or closing registrations on the entity.
- * 
- * @todo: Offset
  */
 function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
   $instance_id = $form['#instance']['id'];

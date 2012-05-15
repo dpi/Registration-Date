@@ -48,6 +48,13 @@ function registration_date_update_7100() {
       }
     }
   }
-  
+
   variable_set('registration_date_field', $new_var);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function registration_date_uninstall() {
+  variable_del('registration_date_field');
 }
