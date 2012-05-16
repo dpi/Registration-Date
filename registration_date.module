@@ -452,10 +452,9 @@ function _registration_date_get_settings($entity_type, $bundle, $registration_fi
         '#instance' => $instance,
       );
     }
-    else {
-      return array();
-    }
   }
+
+  return array();
 }
 
 function _registration_date_get_settings_entity($entity_type, $entity) {
