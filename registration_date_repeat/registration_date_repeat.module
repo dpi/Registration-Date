@@ -159,6 +159,7 @@ function registration_date_repeat_form_field_ui_field_edit_form_alter(&$form, &$
           '@bundle' => $instance_bundle,
         )), 
         '#options' => $instance_options,
+        '#empty_option' => t('-- None --'),
         '#default_value' => isset($settings[$instance_id][$instance_entity_type][$instance_bundle]) ? $settings[$instance_id][$instance_entity_type][$instance_bundle] : '',
       );
     }
