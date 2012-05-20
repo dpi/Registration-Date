@@ -45,31 +45,38 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
     }
 
     $host_field = field_info_field($host_entity_field_name);
+    $host_date_format = date_type_format($host_field['type']);
+    $registration_date_format = date_type_format($field['type']);
 
     switch ($instance['widget']['type']) {
       case 'registration_date_repeat_host_repeat':
-        if (isset($registration->entity->{$host_entity_field_name}[LANGUAGE_NONE][0])) {
-          $item = $registration->entity->{$host_entity_field_name}[LANGUAGE_NONE][0];
+        foreach ($registration->entity->{$host_entity_field_name} as $lang => $items) {
+          foreach ($items as $item) {
+            $dates = date_repeat_build_dates($item['rrule'], NULL, $host_field, $item);
+            $first = reset($dates);
 
-          $dates = date_repeat_build_dates($item['rrule'], NULL, $host_field, $item);
-          $first = reset($dates);
+            if (!empty($dates)) {
+              foreach ($dates as $item) {
+                $timezone = isset($item['timezone']) ? $item['timezone'] : '';
+                $timezone = date_get_timezone($field['settings']['tz_handling'], $timezone);
+                $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
 
-          if (!empty($dates)) {
-            foreach ($dates as $item) {
-              $timezone = isset($item['timezone']) ? $item['timezone'] : '';
-              $timezone = date_get_timezone($field['settings']['tz_handling'], $timezone);
-              $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
-              $db_format = date_type_format($host_field['type']);
+                $date = new DateObject($item['value'], $timezone_db, $host_date_format);
+                date_timezone_set($date, timezone_open($timezone));
 
-              $date = new DateObject($item['value'], $timezone_db, $db_format);
-              date_timezone_set($date, timezone_open($timezone));
-              $options[$item['value']] = date_format_date($date);
+                $value = $item['value'];
+                if ($registration_date_format != $host_date_format) {
+                  $value = date_format_date($date, 'custom', $registration_date_format);
+                }
+
+                $options[$value] = date_format_date($date);
+              }
+
+              $tz = array(
+                '#type' => 'value',
+                '#value' => $first['timezone']
+              );
             }
-
-            $tz = array(
-              '#type' => 'value',
-              '#value' => $first['timezone']
-            );
           }
         }
 
