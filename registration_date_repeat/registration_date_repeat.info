@@ -1,6 +1,6 @@
 name = Registration Date Repeat
 description = Allow each registration to associate with dates found on its associated host entity.
 core = 7.x
-dependencies = date_api
-dependencies = date_repeat_field
+dependencies[] = date_api
+dependencies[] = date_repeat_field
 package = Registration

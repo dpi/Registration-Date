@@ -1,6 +1,6 @@
 name = Registration Date Integration
 description = Control registration access to entities based on values of attached date fields.
 core = 7.x
-dependencies = registration
-dependencies = date_api
+dependencies[] = registration
+dependencies[] = date_api
 package = Registration
