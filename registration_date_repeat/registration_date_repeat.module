@@ -27,6 +27,7 @@ function registration_date_repeat_field_widget_info() {
 function registration_date_repeat_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $field_name = $element['#field_name'];
   $options = array();
+  $tz = array();
 
   if ($instance['entity_type'] == 'registration') {
     if (!isset($form_state['registration'])) {
@@ -65,23 +66,24 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
               $options[$item['value']] = date_format_date($date);
             }
 
-            $element += array(
-              '#type' => 'select',
-              '#options' => $options,
-              '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : '',
-            );
-
             $tz = array(
               '#type' => 'value',
               '#value' => $first['timezone']
             );
-
-            return array(
-              'value' => $element,
-              'timezone' => $tz,
-            );
           }
         }
+
+        $element += array(
+          '#type' => 'select',
+          '#options' => $options,
+          '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : '',
+          '#empty_option' => count($options) ? t('- Select Date -') : t('No valid dates found'),
+        );
+
+        return array(
+          'value' => $element,
+          'timezone' => $tz,
+        );
 
         break;
 

@@ -290,25 +290,27 @@ function theme_registration_date_field_ui($variables) {
   $form = $variables['form'];
   $rows = array();
 
-  foreach (element_children($form['fields']) as $field_name) {
-    foreach (element_children($form['fields'][$field_name]) as $column_name) {
-      // Field description
-      $row = array(
-        array(
-          'data' => $form['fields'][$field_name][$column_name]['#label'],
-        ),
-        array(
-          'data' => $form['fields'][$field_name][$column_name]['#machine_name'],
-        )
-      );
-      // Each radio for a field.
-      foreach (element_children($form['radios'][$field_name][$column_name]) as $column_key) {
-        $form['radios'][$field_name][$column_name][$column_key]['#title_display'] = 'invisible';
-        $row[] = array(
-          'data' => drupal_render($form['radios'][$field_name][$column_name][$column_key]),
+  if (isset($form['fields'])) {
+    foreach (element_children($form['fields']) as $field_name) {
+      foreach (element_children($form['fields'][$field_name]) as $column_name) {
+        // Field description
+        $row = array(
+          array(
+            'data' => $form['fields'][$field_name][$column_name]['#label'],
+          ),
+          array(
+            'data' => $form['fields'][$field_name][$column_name]['#machine_name'],
+          )
         );
+        // Each radio for a field.
+        foreach (element_children($form['radios'][$field_name][$column_name]) as $column_key) {
+          $form['radios'][$field_name][$column_name][$column_key]['#title_display'] = 'invisible';
+          $row[] = array(
+            'data' => drupal_render($form['radios'][$field_name][$column_name][$column_key]),
+          );
+        }
+        $rows[] = $row;
       }
-      $rows[] = $row;
     }
   }
 
