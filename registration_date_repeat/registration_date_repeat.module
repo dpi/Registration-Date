@@ -40,13 +40,14 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
     list( , , $host_bundle) = entity_extract_ids($registration->entity_type, $registration->entity);
     $host_entity_field_name = _registration_date_repeat_date_repeat_instance($instance['id'], $registration->entity_type, $host_bundle);
 
-    if (!$host_entity_field_name) {
+    if (!$host_entity_field_name || !isset($registration->entity->{$host_entity_field_name})) {
       return array($field_name => $element);
     }
 
     $host_field = field_info_field($host_entity_field_name);
     $host_date_format = date_type_format($host_field['type']);
     $registration_date_format = date_type_format($field['type']);
+    $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
 
     switch ($instance['widget']['type']) {
       case 'registration_date_repeat_host_repeat':
@@ -57,14 +58,13 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
 
             if (!empty($dates)) {
               foreach ($dates as $item) {
-                $timezone = isset($item['timezone']) ? $item['timezone'] : '';
-                $timezone = date_get_timezone($field['settings']['tz_handling'], $timezone);
-                $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
-
-                $date = new DateObject($item['value'], $timezone_db, $host_date_format);
-                date_timezone_set($date, timezone_open($timezone));
-
                 $value = $item['value'];
+                $date = new DateObject($value, $timezone_db, $host_date_format);
+
+                $timezone_item = isset($item['timezone']) ? $item['timezone'] : '';
+                $timezone_item = date_get_timezone($field['settings']['tz_handling'], $timezone_item);
+                date_timezone_set($date, timezone_open($timezone_item));
+
                 if ($registration_date_format != $host_date_format) {
                   $value = date_format_date($date, 'custom', $registration_date_format);
                 }

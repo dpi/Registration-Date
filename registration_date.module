@@ -355,6 +355,7 @@ function registration_date_registration_status($entity_type, $entity) {
         $date = $field['date'];
         $unix = $date->format('U');
 
+        // Get current time for the date fields timezone.
         $now = new DateObject('now', $date->getTimezone());
 
         if (!empty($unix) && is_numeric($unix) && $date <= $now) {
