@@ -50,8 +50,8 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
 
     switch ($instance['widget']['type']) {
       case 'registration_date_repeat_host_repeat':
-        foreach ($registration->entity->{$host_entity_field_name} as $lang => $items) {
-          foreach ($items as $item) {
+        foreach ($registration->entity->{$host_entity_field_name} as $lang => $field_items) {
+          foreach ($field_items as $item) {
             $dates = date_repeat_build_dates($item['rrule'], NULL, $host_field, $item);
             $first = reset($dates);
 
