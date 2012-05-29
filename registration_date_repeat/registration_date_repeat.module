@@ -19,7 +19,7 @@ function registration_date_repeat_field_widget_info() {
     'registration_date_repeat_host_repeat' => array(
       'label' => t('Date Repeat for Registrations'),
       'description' => t('Provides a widget limiting registration field data to values found on a host entity with registrations.'),
-      'field types' => array('date', 'datestamp', 'datetime'),
+      'field types' => _registration_date_date_types(),
     )
   );
 }
@@ -112,7 +112,7 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
  * Add field to change settings for date on field UI settings page.
  */
 function registration_date_repeat_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
-  $date_field_types = array('date', 'datetime', 'datestamp');
+  $date_field_types = _registration_date_date_types();
   $instance_id = $form['#instance']['id'];
   $entity_type = $form['#instance']['entity_type'];
   $bundle = $form['#instance']['bundle'];
