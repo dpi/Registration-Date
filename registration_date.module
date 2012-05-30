@@ -464,7 +464,9 @@ function registration_date_registration_status($entity_type, $entity) {
 
 /**
  * Get all dates for a registration entity.
- * 
+ *
+ * Automatically offsets a date if one exists.
+ *
  * @param $entity_type
  *   The type of entity.
  * @param $entity
@@ -483,8 +485,26 @@ function registration_date_registration_dates($entity_type, $entity) {
 
         if (isset($entity->{$date_field_name}[LANGUAGE_NONE][0])) {
           $field_value = $entity->{$date_field_name}[LANGUAGE_NONE][0];
+          $date = $date_raw = new DateObject($field_value[$column_name], $field_value['timezone_db'], $format);
+          $seconds_offset = 0;
+
+          if (!empty($setting['offset_fields_integer'])) {
+            foreach ($setting['offset_fields_integer'] as $offset_field_name => $offset_columns) {
+              if (isset($offset_columns[0])) {
+                $seconds_offset = (int)$entity->{$offset_field_name}[LANGUAGE_NONE][0][$offset_columns[0]];
+              }
+            }
+          }
+
+          // Offset
+          if (!empty($seconds_offset)) {
+            $date_raw = clone $date;
+            $date->modify($seconds_offset . ' seconds');
+          }
+
           $dates[$date_field_name][$column_name] = array(
-            'date' => new DateObject($field_value[$column_name], $field_value['timezone_db'], $format),
+            'date' => $date,
+            'date_raw' => $date_raw, // without offset calculation
             'field_name' => $date_field_name,
             'settings' => $setting,
           );
