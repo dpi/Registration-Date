@@ -18,7 +18,7 @@ module_load_include('inc', 'registration_date', '/registration_date.field');
  * Settings array:
  *
  * * action: open/close
- * * offset_fields: array(field_name => array columns()) 
+ * * offset_fields_integer: array(field_name => array columns()) 
  *     Usually one field => one column
  */
 define('REGISTRATION_DATE_FIELD', 'registration_date_field');
@@ -190,18 +190,20 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
   $entity_type = $form['#instance']['entity_type'];
   $bundle = $form['#instance']['bundle'];
   $registration_field_name = $form['#instance']['field_name'];
-  $a = (date_interval_create_from_date_string('1 days'));
-  //dpm($a);
-  
   $settings = variable_get(REGISTRATION_DATE_FIELD, array());
 
   if ($form['#field']['type'] != 'registration') {
     return;
   }
 
+  $fields = array();
+
   $date_fields = array();
-  $offset_fields = array();
+  $offset_options = array();
+
   $date_types = _registration_date_date_types();
+  $integer_types = array('number_integer');
+  $date_column_exclude = array('rrule');
 
   $actions = array(
     'none' => t('None'),
@@ -232,7 +234,7 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
         '@field_type' => $field_type,
       ));
       foreach (array_keys($field['columns']) as $column) {
-        $offset_fields[$label]["$field_name][$column"] = t(
+        $fields[$field_type][$label]["$field_name][$column"] = t(
           '@field_name: @column',
           array(
             '@field_name' => $field_name,
@@ -240,6 +242,12 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
           )
         );
       }
+    }
+  }
+
+  foreach ($fields as $field_type => $fields) {
+    if (in_array($field_type, $integer_types)) {
+      $offset_options += $fields;
     }
   }
 
@@ -256,6 +264,10 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
     if (in_array($field['type'], $date_types) && isset($field['bundles'][$entity_type])) { //@todo remove?
       if (in_array($bundle, $field['bundles'][$entity_type])) { //@todo remove?
         foreach (array_keys($field['columns']) as $column) {
+          if (in_array($column, $date_column_exclude)) {
+            continue;
+          }
+
           $instance = field_info_instance($entity_type, $field_name, $bundle);
 
           $form['registration_date']['status']['fields'][$field_name][$column] = array(
@@ -274,8 +286,8 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
                 $action = $setting['action'];
                 $action_default = (isset($actions[$action])) ? $action : 'none';
               }
-              if (!empty($setting['offset_fields'])) {
-                foreach ($setting['offset_fields'] as $offset_field_name => $offset_columns) {
+              if (!empty($setting['offset_fields_integer'])) {
+                foreach ($setting['offset_fields_integer'] as $offset_field_name => $offset_columns) {
                   foreach ($offset_columns as $offset_column) {
                     $offset_default = $offset_field_name . '][' . $offset_column;
                   }
@@ -292,9 +304,9 @@ function registration_date_form_field_ui_field_edit_form_alter(&$form, &$form_st
           );
 
           // Offsets
-          $form['registration_date']['status']['offset_string_field'][$field_name][$column] = array(
+          $form['registration_date']['status']['offset_integer_field'][$field_name][$column] = array(
             '#type' => 'select',
-            '#options' => $offset_fields,
+            '#options' => $offset_options,
             '#default_value' => $offset_default,
             '#empty_option' => t('- No Offset -'),
             '#default_value' => $offset_default,
@@ -335,10 +347,10 @@ function registration_date_field_ui_submit(&$form, &$form_state) {
           );
 
           // Offset Fields
-          if (!empty($form_state['values']['registration_date']['status']['offset_string_field'][$date_field_name][$column_name])) {
-            $offset_raw = $form_state['values']['registration_date']['status']['offset_string_field'][$date_field_name][$column_name];
+          if (!empty($form_state['values']['registration_date']['status']['offset_integer_field'][$date_field_name][$column_name])) {
+            $offset_raw = $form_state['values']['registration_date']['status']['offset_integer_field'][$date_field_name][$column_name];
             list($offset_field_name, $offset_column) = explode('][', $offset_raw);
-            $setting['offset_fields'] = array($offset_field_name => array($offset_column));
+            $setting['offset_fields_integer'] = array($offset_field_name => array($offset_column));
           }
 
           $settings[$instance_id][$date_field_name][$column_name][] = $setting;
@@ -376,7 +388,7 @@ function theme_registration_date_field_ui($variables) {
         }
 
         $row[] = array(
-          'data' => drupal_render($form['offset_string_field'][$field_name][$column_name]),
+          'data' => drupal_render($form['offset_integer_field'][$field_name][$column_name]),
         );
 
         $rows[] = $row;
@@ -390,7 +402,7 @@ function theme_registration_date_field_ui($variables) {
     'None',
     'Open',
     'Close',
-    'Offset Field (from value string)',
+    'Offset',
   );
 
   return theme('table', array(

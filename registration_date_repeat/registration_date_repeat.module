@@ -36,7 +36,7 @@ function registration_date_repeat_field_widget_form(&$form, &$form_state, $field
     }
 
     $registration = $form_state['registration'];
-    
+
     list( , , $host_bundle) = entity_extract_ids($registration->entity_type, $registration->entity);
     $host_entity_field_name = _registration_date_repeat_date_repeat_instance($instance['id'], $registration->entity_type, $host_bundle);
 
